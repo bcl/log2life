@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 /* commandline flags */
@@ -73,16 +74,26 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+
+	lastTime := time.Time{}
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		pattern, err := LineToPattern(scanner.Text(), cfg.Width, cfg.Height)
+		pattern, timestamp, err := LineToPattern(scanner.Text(), cfg.Width, cfg.Height)
 		if err != nil {
 			log.Print(err)
 			continue
 		}
 
-		fmt.Printf("%s\n", strings.Join(pattern, "\n"))
+		// Replay the logfile in realtime when speed = 1.0
+		noTime := time.Time{}
+		if lastTime != noTime {
+			delay := time.Duration(timestamp.Sub(lastTime).Seconds()*1/cfg.Speed) * time.Second
+			fmt.Printf("delaying %s\n", delay)
+			time.Sleep(delay)
+		}
+		lastTime = timestamp
 
+		fmt.Printf("%s\n", strings.Join(pattern, "\n"))
 		err = SendPattern(cfg.Host, cfg.Port, pattern)
 		if err != nil {
 			fmt.Printf("ERROR: %s\n", err)
@@ -95,18 +106,23 @@ func main() {
 }
 
 // LineToPattern converts a log line to a Life 1.05 pattern with position based on the client IP
-func LineToPattern(line string, width, height int) ([]string, error) {
+func LineToPattern(line string, width, height int) ([]string, time.Time, error) {
 
 	// Get the IP and convert to x, y coordinated, scaled by columns, rows and 0, 0 at the center
 	fields := strings.SplitN(line, " ", 4)
 	if fields[0] == "-" || strings.TrimSpace(fields[0]) == "" {
-		return []string{}, fmt.Errorf("No client IP address")
+		return []string{}, time.Time{}, fmt.Errorf("No client IP address")
 	}
 	x, y := IPToXY(fields[0], width, height)
 
 	// Get the timestamp (will eventually return this and use it for timing)
+	// [20/Nov/2022:02:27:49 +0000]
 	fields = strings.SplitN(fields[3], "]", 2)
 	//	timestamp := fields[0][1:]
+	timestamp, err := time.Parse("02/Jan/2006:15:04:05 -0700", fields[0][1:])
+	if err != nil {
+		return []string{}, time.Time{}, err
+	}
 
 	// XOR the data into an 8x8 bitpattern
 	var data [8]byte
@@ -121,7 +137,7 @@ func LineToPattern(line string, width, height int) ([]string, error) {
 	}
 
 	// Convert the data to a Life 1.05 pattern
-	return MakeLife105(x, y, data), nil
+	return MakeLife105(x, y, data), timestamp, nil
 }
 
 // IPToXY convert an IPv4 dotted quad into an X, Y coordinate
