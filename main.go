@@ -61,6 +61,9 @@ func main() {
 	var err error
 	if filename == "-" {
 		f = os.Stdin
+
+		// When feeding log lines we don't want to delay
+		cfg.Speed = 0
 	} else {
 		_, err = os.Stat(filename)
 		if err != nil {
@@ -87,7 +90,7 @@ func main() {
 		// Replay the logfile in realtime when speed = 1.0
 		noTime := time.Time{}
 		if lastTime != noTime {
-			delay := time.Duration(timestamp.Sub(lastTime).Seconds()*1/cfg.Speed) * time.Second
+			delay := time.Duration(float64(timestamp.Sub(lastTime).Microseconds())*1/cfg.Speed) * time.Microsecond
 			fmt.Printf("delaying %s\n", delay)
 			time.Sleep(delay)
 		}
