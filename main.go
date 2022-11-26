@@ -1,3 +1,5 @@
+// log2life
+// by Brian C. Lane <bcl@brianlane.com>
 package main
 
 import (
@@ -64,18 +66,15 @@ func main() {
 
 		// When feeding log lines we don't want to delay
 		cfg.Speed = 0
+		fmt.Printf("Playback of <stdin> to %s:%d in realtime\n", cfg.Host, cfg.Port)
 	} else {
-		_, err = os.Stat(filename)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("Playback of %s to %s:%d at %0.1fx speed\n", filename, cfg.Host, cfg.Port, cfg.Speed)
 
 		// Read logfile line by line
 		f, err = os.Open(filename)
 		if err != nil {
 			log.Fatal(err)
 		}
+		fmt.Printf("Playback of %s to %s:%d at %0.1fx speed\n", filename, cfg.Host, cfg.Port, cfg.Speed)
 	}
 
 	lastTime := time.Time{}
@@ -87,7 +86,9 @@ func main() {
 			continue
 		}
 
-		// Replay the logfile in realtime when speed = 1.0
+		// When reading from stdin speed is set to 0 for no delay. When replaying a
+		// log file it will use the timestamps to replay it in realtime unless -speed is passed
+		// with a different value.
 		noTime := time.Time{}
 		if lastTime != noTime {
 			delay := time.Duration(float64(timestamp.Sub(lastTime).Microseconds())*1/cfg.Speed) * time.Microsecond
@@ -128,6 +129,7 @@ func LineToPattern(line string, width, height int) ([]string, time.Time, error) 
 	}
 
 	// XOR the data into an 8x8 bitpattern
+	// TODO Scramble this a bit more, all the log data is 7 bit
 	var data [8]byte
 	var idx int
 	for _, b := range []byte(fields[1]) {
@@ -152,6 +154,8 @@ func IPToXY(addr string, width, height int) (x, y int) {
 
 	// Only using IPv4 right now so 4 bytes from the ip which are at the end
 	// because it converts it to a IPv6 encoded IPv4
+	// Use the upper 16 bits as x and lower 16 as y, scaled to the life world size
+	// and with 0,0 at the center
 	x = int(float64(int(ip[12])<<8+int(ip[13]))/0xffff*float64(width)) - width/2
 	y = int(float64(int(ip[14])<<8+int(ip[15]))/0xffff*float64(height)) - height/2
 
