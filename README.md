@@ -9,8 +9,8 @@ x, y coordinate in the Life world.
 
 * Download and build [sdl2-life server](https://github.com/bcl/sdl2-life)
 * Build log2life by running `go build`
-* Start the life server with `sdl2-life -rows 255 -columns 255 -server -empty`
-* Pass a logfile to the server by running `log2life -width 255 -height 255 /path/to/logfile.log`
+* Start the life server with `sdl2-life -rows 250 -columns 250 -server -empty`
+* Pass a logfile to the server by running `log2life -rows 250 -columns 250 /path/to/logfile.log`
 
 That will use the timestamps in the logfile to replay the requests in realtime.
 You can control the playback speed by passing '-speed 10' to playback at 10x

@@ -19,8 +19,8 @@ import (
 type cmdlineArgs struct {
 	Logfile string  // Logfile to read
 	Speed   float64 // Playback speed factor 1.0 == realtime
-	Width   int     // Width of Life world in cells
-	Height  int     // Height of Life world in cells
+	Columns int     // Columns of Life world in cells
+	Rows    int     // Rows of Life world in cells
 	Port    int     // Port to connect to
 	Host    string  // Host IP to connect to
 }
@@ -29,8 +29,8 @@ type cmdlineArgs struct {
 var cfg = cmdlineArgs{
 	Logfile: "",
 	Speed:   1.0,
-	Width:   100,
-	Height:  100,
+	Columns: 100,
+	Rows:    100,
 	Port:    3051,
 	Host:    "127.0.0.1",
 }
@@ -38,8 +38,8 @@ var cfg = cmdlineArgs{
 /* parseArgs handles parsing the cmdline args and setting values in the global cfg struct */
 func init() {
 	flag.Float64Var(&cfg.Speed, "speed", cfg.Speed, "Playback speed. 1.0 is realtime")
-	flag.IntVar(&cfg.Width, "width", cfg.Width, "Width of Life world in cells")
-	flag.IntVar(&cfg.Height, "height", cfg.Height, "Height of Life world in cells")
+	flag.IntVar(&cfg.Columns, "columns", cfg.Columns, "Width of Life world in cells")
+	flag.IntVar(&cfg.Rows, "rows", cfg.Rows, "Height of Life world in cells")
 	flag.IntVar(&cfg.Port, "port", cfg.Port, "Port to listen to")
 	flag.StringVar(&cfg.Host, "host", cfg.Host, "Host IP to bind to")
 
@@ -80,7 +80,7 @@ func main() {
 	lastTime := time.Time{}
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		pattern, timestamp, err := LineToPattern(scanner.Text(), cfg.Width, cfg.Height)
+		pattern, timestamp, err := LineToPattern(scanner.Text(), cfg.Columns, cfg.Rows)
 		if err != nil {
 			log.Print(err)
 			continue
